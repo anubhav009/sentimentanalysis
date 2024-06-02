@@ -65,44 +65,48 @@ if amazon_data is not None and twitter_data is not None:
     if not selected_sentiment:
         st.warning("Please select at least one sentiment.")
     else:
-        # Ensure the date range slider values are datetime.date objects
-        min_date = data['date'].min().date()
-        max_date = data['date'].max().date()
-        
-        date_range = st.sidebar.slider(
-            'Select Date Range',
-            min_value=min_date,
-            max_value=max_date,
-            value=(min_date, max_date)
-        )
+        try:
+            # Ensure the date range slider values are datetime.date objects
+            min_date = data['date'].min().date()
+            max_date = data['date'].max().date()
+            
+            date_range = st.sidebar.slider(
+                'Select Date Range',
+                min_value=min_date,
+                max_value=max_date,
+                value=(min_date, max_date)
+            )
 
-        # Convert date_range to datetime
-        start_date = pd.to_datetime(date_range[0])
-        end_date = pd.to_datetime(date_range[1])
+            # Convert date_range to datetime
+            start_date = pd.to_datetime(date_range[0])
+            end_date = pd.to_datetime(date_range[1])
 
-        st.write(f"Start Date: {start_date}, End Date: {end_date}")  # Debugging line
-        st.write(f"Data Date Range: {data['date'].min()} to {data['date'].max()}")  # Debugging line
+            st.write(f"Start Date: {start_date}, End Date: {end_date}")  # Debugging line
+            st.write(f"Data Date Range: {data['date'].min()} to {data['date'].max()}")  # Debugging line
 
-        # Filter data based on user input
-        filtered_data = data[
-            (data['sentiment'].isin(selected_sentiment)) & 
-            (data['date'] >= start_date) & 
-            (data['date'] <= end_date)
-        ]
+            # Filter data based on user input
+            filtered_data = data[
+                (data['sentiment'].isin(selected_sentiment)) & 
+                (data['date'] >= start_date) & 
+                (data['date'] <= end_date)
+            ]
 
-        # Display filtered data
-        st.write(f"Displaying {selected_dataset} reviews with {selected_sentiment} sentiment from {start_date.date()} to {end_date.date()}")
-        st.write(filtered_data.head())
+            # Display filtered data
+            st.write(f"Displaying {selected_dataset} reviews with {selected_sentiment} sentiment from {start_date.date()} to {end_date.date()}")
+            st.write(filtered_data.head())
 
-        # Plot sentiment distribution over time
-        fig = px.histogram(filtered_data, x='date', color='sentiment', title='Sentiment Distribution Over Time')
-        st.plotly_chart(fig)
+            # Plot sentiment distribution over time
+            fig = px.histogram(filtered_data, x='date', color='sentiment', title='Sentiment Distribution Over Time')
+            st.plotly_chart(fig)
 
-        # Plot sentiment count
-        sentiment_count = filtered_data['sentiment'].value_counts().reset_index()
-        sentiment_count.columns = ['sentiment', 'count']
-        fig = px.bar(sentiment_count, x='sentiment', y='count', color='sentiment', title='Sentiment Count')
-        st.plotly_chart(fig)
+            # Plot sentiment count
+            sentiment_count = filtered_data['sentiment'].value_counts().reset_index()
+            sentiment_count.columns = ['sentiment', 'count']
+            fig = px.bar(sentiment_count, x='sentiment', y='count', color='sentiment', title='Sentiment Count')
+            st.plotly_chart(fig)
+
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
 
     # Model selection
     model_options = ['Logistic Regression', 'Naive Bayes', 'XGBClassifier', 'BERT']
@@ -114,9 +118,9 @@ if amazon_data is not None and twitter_data is not None:
         st.write("Logistic Regression is a linear model for binary classification predictive modeling.")
     elif selected_model == 'Naive Bayes':
         st.write("Naive Bayes is a probabilistic classifier based on Bayes' theorem with strong independence assumptions.")
-    elif selected_model is 'XGBClassifier':
+    elif selected_model == 'XGBClassifier':
         st.write("XGBClassifier is an implementation of gradient boosted decision trees designed for speed and performance.")
-    elif selected_model is 'BERT':
+    elif selected_model == 'BERT':
         st.write("BERT is a transformer-based model designed to understand the context of a word in search queries.")
 
     # Placeholder for additional visualizations or model results
@@ -127,4 +131,4 @@ else:
     st.write("Please upload both Amazon and Twitter dataset CSV files to proceed.")
 
 # End of the app
-
+st.write("End of analysis.")
