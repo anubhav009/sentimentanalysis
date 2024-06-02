@@ -66,11 +66,14 @@ if amazon_data is not None and twitter_data is not None:
         st.warning("Please select at least one sentiment.")
     else:
         # Ensure the date range slider values are datetime.date objects
+        min_date = data['date'].min().date()
+        max_date = data['date'].max().date()
+        
         date_range = st.sidebar.slider(
             'Select Date Range',
-            min_value=data['date'].min().date(),
-            max_value=data['date'].max().date(),
-            value=(data['date'].min().date(), data['date'].max().date())
+            min_value=min_date,
+            max_value=max_date,
+            value=(min_date, max_date)
         )
 
         # Convert date_range to datetime
@@ -85,7 +88,7 @@ if amazon_data is not None and twitter_data is not None:
         ]
 
         # Display filtered data
-        st.write(f"Displaying {selected_dataset} reviews with {selected_sentiment} sentiment from {date_range[0]} to {date_range[1]}")
+        st.write(f"Displaying {selected_dataset} reviews with {selected_sentiment} sentiment from {start_date.date()} to {end_date.date()}")
         st.write(filtered_data.head())
 
         # Plot sentiment distribution over time
