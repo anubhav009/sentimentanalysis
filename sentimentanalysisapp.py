@@ -6,7 +6,7 @@ import plotly.express as px
 def load_amazon_data(uploaded_file):
     data = pd.read_csv(uploaded_file, encoding='utf-8')
     data.rename(columns={'reviewed_at': 'date'}, inplace=True)
-    data['date'] = pd.to_datetime(data['date'], errors='coerce')
+    data['date'] = pd.to_datetime(data['date'], errors='coerce').dt.tz_localize(None)
     
     # Map review ratings to sentiment
     rating_to_sentiment = {
@@ -23,7 +23,7 @@ def load_amazon_data(uploaded_file):
 # Function to load and preprocess Twitter data
 def load_twitter_data(uploaded_file):
     data = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
-    data['date'] = pd.to_datetime(data['date'], errors='coerce')
+    data['date'] = pd.to_datetime(data['date'], errors='coerce').dt.tz_localize(None)
     
     sentiment_map = {0: 'Negative', 2: 'Neutral', 4: 'Positive'}
     data['sentiment'] = data['sentiment'].map(sentiment_map)
