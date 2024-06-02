@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
-import numpy as np
 
 st.title("Apple Product Reviews and Twitter Sentiment Analysis")
 
@@ -70,7 +69,9 @@ if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
     
     # Visualization: Helpful Count vs. Total Comments
     st.subheader("Helpful Count vs. Total Comments")
-    reviews_df['helpful_count'] = reviews_df['helpful_count'].str.replace(' people found this helpful', '').astype(int)
+    # Handle non-numeric values and convert to integers
+    reviews_df['helpful_count'] = reviews_df['helpful_count'].str.replace(' people found this helpful', '').str.replace(',', '')
+    reviews_df['helpful_count'] = pd.to_numeric(reviews_df['helpful_count'], errors='coerce').fillna(0).astype(int)
     fig, ax = plt.subplots()
     ax.scatter(reviews_df['helpful_count'], reviews_df['total_comments'])
     ax.set_xlabel('Helpful Count')
