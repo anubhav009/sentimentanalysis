@@ -3,7 +3,11 @@ import pandas as pd
 
 # Function to load data and ensure 'date' column exists
 def load_data(uploaded_file):
-    data = pd.read_csv(uploaded_file)
+    try:
+        data = pd.read_csv(uploaded_file, encoding='utf-8')
+    except UnicodeDecodeError:
+        data = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
+    
     if 'date' in data.columns:
         data['date'] = pd.to_datetime(data['date'], errors='coerce')
     else:
