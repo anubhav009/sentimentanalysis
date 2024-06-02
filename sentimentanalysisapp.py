@@ -77,9 +77,9 @@ if amazon_data is not None and twitter_data is not None:
                 value=(min_date, max_date)
             )
 
-            # Convert date_range to datetime
-            start_date = pd.to_datetime(date_range[0])
-            end_date = pd.to_datetime(date_range[1])
+            # Convert date_range to datetime without timezone information
+            start_date = pd.to_datetime(date_range[0]).tz_localize(None)
+            end_date = pd.to_datetime(date_range[1]).tz_localize(None)
 
             st.write(f"Start Date: {start_date}, End Date: {end_date}")  # Debugging line
             st.write(f"Data Date Range: {data['date'].min()} to {data['date'].max()}")  # Debugging line
