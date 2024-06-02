@@ -49,7 +49,7 @@ if uploaded_twitter_file is not None:
     twitter_data = load_twitter_data(uploaded_twitter_file)
 
 # Dataset selection
-if amazon_data is not None and twitter_data is not None:
+if amazon_data is not None or twitter_data is not None:
     selected_dataset = st.sidebar.selectbox('Select Dataset', ('Amazon', 'Twitter'))
 
     # Sentiment selection
@@ -57,14 +57,14 @@ if amazon_data is not None and twitter_data is not None:
     selected_sentiment = st.sidebar.multiselect('Select Sentiment', sentiment_options, sentiment_options)
 
     # Date range selection
-    if selected_dataset == 'Amazon':
+    if selected_dataset == 'Amazon' and amazon_data is not None:
         data = amazon_data
-    else:
+    elif selected_dataset == 'Twitter' and twitter_data is not None:
         data = twitter_data
-
-    if not selected_sentiment:
-        st.warning("Please select at least one sentiment.")
     else:
+        data = None
+
+    if data is not None and selected_sentiment:
         try:
             # Ensure the date range slider values are datetime.date objects
             min_date = data['date'].min().date()
