@@ -72,15 +72,6 @@ if uploaded_file_reviews and uploaded_file_twitter:
     ax.set_ylabel('Number of Reviews')
     st.pyplot(fig)
 
-    # Sentiments Over Time
-    st.subheader('Sentiments Over Time')
-    fig, ax = plt.subplots()
-    valid_twitter_sentiment.set_index('date').resample('M')['sentiment_label'].value_counts().unstack().plot(ax=ax)
-    ax.set_title('Sentiments Over Time')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Sentiment Count')
-    st.pyplot(fig)
-
     # Filter reviews by star ratings
     st.subheader('Filter Reviews by Star Rating')
     star_rating = st.selectbox('Select Star Rating', sorted(iphone_reviews['review_rating'].unique()))
@@ -94,6 +85,24 @@ if uploaded_file_reviews and uploaded_file_twitter:
     ax.set_title(f'Number of Reviews for {star_rating} Star Rating Over Time')
     ax.set_xlabel('Date')
     ax.set_ylabel('Number of Reviews')
+    st.pyplot(fig)
+
+    # Model Accuracy Plot
+    st.subheader('Model Accuracy')
+    model_types = ['LogisticRegression', 'Multinomial Naive Bayes classifier', 'XGBClassifier', 'BERT']
+    accuracy_scores = [0.7552950075642966, 0.7299546142208775, 0.7409228441754917, 0.7744811489219366]
+    selected_model = st.selectbox('Select Model', model_types)
+    
+    fig, ax = plt.subplots()
+    ax.plot(model_types, accuracy_scores, marker='o', linestyle='-')
+    
+    for i, (xi, yi) in enumerate(zip(model_types, accuracy_scores)):
+        ax.annotate(f'({xi}, {yi:.4f})', (xi, yi), textcoords="offset points", xytext=(0, 15), ha='center')
+    
+    ax.set_title('Model Accuracy')
+    ax.set_xlabel('Model Name')
+    ax.set_ylabel('Accuracy Score')
+    ax.grid(True)
     st.pyplot(fig)
 
     # Generate Word Cloud
