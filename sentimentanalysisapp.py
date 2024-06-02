@@ -80,6 +80,9 @@ if amazon_data is not None and twitter_data is not None:
         start_date = pd.to_datetime(date_range[0])
         end_date = pd.to_datetime(date_range[1])
 
+        st.write(f"Start Date: {start_date}, End Date: {end_date}")  # Debugging line
+        st.write(f"Data Date Range: {data['date'].min()} to {data['date'].max()}")  # Debugging line
+
         # Filter data based on user input
         filtered_data = data[
             (data['sentiment'].isin(selected_sentiment)) & 
@@ -111,9 +114,9 @@ if amazon_data is not None and twitter_data is not None:
         st.write("Logistic Regression is a linear model for binary classification predictive modeling.")
     elif selected_model == 'Naive Bayes':
         st.write("Naive Bayes is a probabilistic classifier based on Bayes' theorem with strong independence assumptions.")
-    elif selected_model == 'XGBClassifier':
+    elif selected_model is 'XGBClassifier':
         st.write("XGBClassifier is an implementation of gradient boosted decision trees designed for speed and performance.")
-    elif selected_model == 'BERT':
+    elif selected_model is 'BERT':
         st.write("BERT is a transformer-based model designed to understand the context of a word in search queries.")
 
     # Placeholder for additional visualizations or model results
@@ -124,4 +127,4 @@ else:
     st.write("Please upload both Amazon and Twitter dataset CSV files to proceed.")
 
 # End of the app
-st.write("End of analysis.")
+
