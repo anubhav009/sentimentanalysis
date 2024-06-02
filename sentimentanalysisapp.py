@@ -81,9 +81,6 @@ if amazon_data is not None or twitter_data is not None:
             start_date = pd.to_datetime(date_range[0]).tz_localize(None)
             end_date = pd.to_datetime(date_range[1]).tz_localize(None)
 
-            st.write(f"Start Date: {start_date}, End Date: {end_date}")  # Debugging line
-            st.write(f"Data Date Range: {data['date'].min()} to {data['date'].max()}")  # Debugging line
-
             # Filter data based on user input
             filtered_data = data[
                 (data['sentiment'].isin(selected_sentiment)) & 
@@ -95,15 +92,24 @@ if amazon_data is not None or twitter_data is not None:
             st.write(f"Displaying {selected_dataset} reviews with {selected_sentiment} sentiment from {start_date.date()} to {end_date.date()}")
             st.write(filtered_data.head())
 
-            # Plot sentiment distribution over time
-            fig = px.histogram(filtered_data, x='date', color='sentiment', title='Sentiment Distribution Over Time')
-            st.plotly_chart(fig)
+            # Plot visualizations based on selected dataset
+            if selected_dataset == 'Amazon':
+                # Bar chart showing the distribution of sentiments across different products
+                fig = px.bar(filtered_data, x='product', color='sentiment', title='Sentiment Distribution Across Products')
+                st.plotly_chart(fig)
+                
+                # Line chart showing the number of reviews over time
+                fig = px.line(filtered_data, x='date', y=filtered_data.index, title='Number of Reviews Over Time', markers=True)
+                st.plotly_chart(fig)
 
-            # Plot sentiment count
-            sentiment_count = filtered_data['sentiment'].value_counts().reset_index()
-            sentiment_count.columns = ['sentiment', 'count']
-            fig = px.bar(sentiment_count, x='sentiment', y='count', color='sentiment', title='Sentiment Count')
-            st.plotly_chart(fig)
+            elif selected_dataset == 'Twitter':
+                # Pie chart showing the proportion of each sentiment
+                fig = px.pie(filtered_data, names='sentiment', title='Proportion of Each Sentiment')
+                st.plotly_chart(fig)
+                
+                # Histogram showing the frequency of tweets over time
+                fig = px.histogram(filtered_data, x='date', color='sentiment', title='Frequency of Tweets Over Time')
+                st.plotly_chart(fig)
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
