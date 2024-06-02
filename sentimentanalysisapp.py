@@ -1,18 +1,21 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
-# Function to load data and ensure 'date' column exists
-def load_data(uploaded_file):
+# Function to load data and ensure necessary columns exist
+def load_data(uploaded_file, expected_columns):
     try:
         data = pd.read_csv(uploaded_file, encoding='utf-8')
     except UnicodeDecodeError:
         data = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
     
-    if 'date' in data.columns:
-        data['date'] = pd.to_datetime(data['date'], errors='coerce')
-    else:
-        st.warning("Uploaded CSV does not contain a 'date' column.")
-        data['date'] = pd.NaT  # Assign Not-A-Time to date column
+    for column in expected_columns:
+        if column not in data.columns:
+            st.warning(f"Uploaded CSV does not contain a '{column}' column.")
+            return None
+    
+    data['date'] = pd.to_datetime(data['date'], errors='coerce')
+    data = data.dropna(subset=['date'])
     return data
 
 # Title
@@ -25,15 +28,18 @@ st.sidebar.header("User Input Features")
 uploaded_amazon_file = st.sidebar.file_uploader("Upload Amazon Reviews CSV", type=["csv"])
 uploaded_twitter_file = st.sidebar.file_uploader("Upload Twitter Sentiment CSV", type=["csv"])
 
+expected_columns = ['sentiment', 'date']
+
 # Load data
+amazon_data = twitter_data = None
 if uploaded_amazon_file is not None:
-    amazon_data = load_data(uploaded_amazon_file)
+    amazon_data = load_data(uploaded_amazon_file, expected_columns)
 
 if uploaded_twitter_file is not None:
-    twitter_data = load_data(uploaded_twitter_file)
+    twitter_data = load_data(uploaded_twitter_file, expected_columns)
 
 # Dataset selection
-if uploaded_amazon_file is not None and uploaded_twitter_file is not None:
+if amazon_data is not None and twitter_data is not None:
     selected_dataset = st.sidebar.selectbox('Select Dataset', ('Amazon', 'Twitter'))
 
     # Sentiment selection
@@ -46,13 +52,9 @@ if uploaded_amazon_file is not None and uploaded_twitter_file is not None:
     else:
         data = twitter_data
 
-    # Filter out rows without valid dates
-    if data['date'].isna().all():
-        st.warning(f"The selected dataset ({selected_dataset}) does not contain valid date information.")
+    if not selected_sentiment:
+        st.warning("Please select at least one sentiment.")
     else:
-        data = data.dropna(subset=['date'])
-
-        # Date range slider
         date_range = st.sidebar.slider(
             'Select Date Range',
             min_value=data['date'].min().date(),
@@ -70,6 +72,16 @@ if uploaded_amazon_file is not None and uploaded_twitter_file is not None:
         # Display filtered data
         st.write(f"Displaying {selected_dataset} reviews with {selected_sentiment} sentiment from {date_range[0]} to {date_range[1]}")
         st.write(filtered_data.head())
+
+        # Plot sentiment distribution over time
+        fig = px.histogram(filtered_data, x='date', color='sentiment', title='Sentiment Distribution Over Time')
+        st.plotly_chart(fig)
+
+        # Plot sentiment count
+        sentiment_count = filtered_data['sentiment'].value_counts().reset_index()
+        sentiment_count.columns = ['sentiment', 'count']
+        fig = px.bar(sentiment_count, x='sentiment', y='count', color='sentiment', title='Sentiment Count')
+        st.plotly_chart(fig)
 
     # Model selection
     model_options = ['Logistic Regression', 'Naive Bayes', 'XGBClassifier', 'BERT']
