@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
+import seaborn as sns
 
 st.title("Apple Product Reviews and Twitter Sentiment Analysis")
 
@@ -26,26 +27,54 @@ if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
     rating_counts = reviews_df['review_rating'].value_counts().sort_index()
     st.bar_chart(rating_counts)
     
-    # Visualization: Review Ratings Pie Chart
-    st.subheader("Review Ratings Pie Chart")
+    # Visualization: Review Ratings Bar Chart
+    st.subheader("Review Ratings Bar Chart")
     fig, ax = plt.subplots()
-    ax.pie(rating_counts, labels=rating_counts.index, autopct='%1.1f%%')
+    ax.bar(rating_counts.index, rating_counts.values)
+    ax.set_xlabel('Review Rating')
+    ax.set_ylabel('Count')
+    st.pyplot(fig)
+
+    # Visualization: Sentiment Distribution Pie Chart
+    st.subheader("Sentiment Distribution Pie Chart")
+    sentiment_counts = twitter_df['sentiment'].value_counts()
+    fig, ax = plt.subplots()
+    ax.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', startangle=140)
+    ax.axis('equal')
+    st.pyplot(fig)
+
+    # Visualization: Box Plot for Sentiment Confidence
+    st.subheader("Box Plot for Sentiment Confidence")
+    fig, ax = plt.subplots()
+    sns.boxplot(x='sentiment', y='sentiment:confidence', data=twitter_df, ax=ax)
+    ax.set_xlabel('Sentiment')
+    ax.set_ylabel('Sentiment Confidence')
     st.pyplot(fig)
     
-    # Visualization: Word Cloud for Reviews
-    st.subheader("Word Cloud for Reviews")
-    # Ensure all reviews are treated as strings and handle missing values
-    reviews_df['review_text'] = reviews_df['review_text'].astype(str).fillna('')
-    review_text = " ".join(reviews_df['review_text'])
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(review_text)
+    # Visualization: Time Series of Review Ratings
+    st.subheader("Time Series of Review Ratings")
+    reviews_df['reviewed_at'] = pd.to_datetime(reviews_df['reviewed_at'])
+    reviews_over_time = reviews_df.set_index('reviewed_at').resample('M')['review_rating'].mean()
+    st.line_chart(reviews_over_time)
+
+    # Dropdown for filtering sentiment type for Word Cloud
+    sentiment_types = twitter_df['sentiment'].unique()
+    selected_sentiment = st.selectbox("Select Sentiment Type for Word Cloud", sentiment_types)
+    
+    filtered_twitter_df = twitter_df[twitter_df['sentiment'] == selected_sentiment]
+    
+    # Visualization: Word Cloud for Selected Sentiment
+    st.subheader("Word Cloud for Selected Sentiment")
+    filtered_twitter_df['text'] = filtered_twitter_df['text'].astype(str).fillna('')
+    sentiment_text = " ".join(filtered_twitter_df['text'])
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(sentiment_text)
     fig, ax = plt.subplots()
     ax.imshow(wordcloud, interpolation='bilinear')
     ax.axis('off')
     st.pyplot(fig)
-    
+
     # Visualization: Sentiment Analysis
     st.subheader("Twitter Sentiment Analysis")
-    sentiment_counts = twitter_df['sentiment'].value_counts()
     st.bar_chart(sentiment_counts)
     
     # Visualization: Sentiment Confidence Histogram
@@ -53,19 +82,6 @@ if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
     fig, ax = plt.subplots()
     ax.hist(twitter_df['sentiment:confidence'], bins=20, color='skyblue')
     st.pyplot(fig)
-    
-    # Dropdown for filtering reviews by country
-    countries = reviews_df['review_country'].unique()
-    selected_country = st.selectbox("Select Country", countries)
-    
-    filtered_reviews_df = reviews_df[reviews_df['review_country'] == selected_country]
-    st.dataframe(filtered_reviews_df)
-
-    # Visualization: Reviews over time
-    st.subheader(f"Reviews Over Time in {selected_country}")
-    filtered_reviews_df['reviewed_at'] = pd.to_datetime(filtered_reviews_df['reviewed_at'])
-    reviews_over_time = filtered_reviews_df.set_index('reviewed_at').resample('M').size()
-    st.line_chart(reviews_over_time)
     
     # Visualization: Helpful Count vs. Total Comments
     st.subheader("Helpful Count vs. Total Comments")
@@ -77,19 +93,16 @@ if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
     ax.set_xlabel('Helpful Count')
     ax.set_ylabel('Total Comments')
     st.pyplot(fig)
-
-    # Dropdown for filtering sentiment by query
-    queries = twitter_df['query'].unique()
-    selected_query = st.selectbox("Select Query", queries)
     
-    filtered_twitter_df = twitter_df[twitter_df['query'] == selected_query]
-    st.dataframe(filtered_twitter_df)
-
-    # Visualization: Sentiment over time
-    st.subheader(f"Sentiment Over Time for {selected_query}")
-    filtered_twitter_df['date'] = pd.to_datetime(filtered_twitter_df['date'])
-    sentiment_over_time = filtered_twitter_df.set_index('date').resample('M').size()
-    st.line_chart(sentiment_over_time)
+    # Visualization: Top 10 Words in Reviews
+    st.subheader("Top 10 Words in Reviews")
+    from collections import Counter
+    import re
+    words = re.findall(r'\w+', review_text.lower())
+    word_counts = Counter(words)
+    common_words = word_counts.most_common(10)
+    words_df = pd.DataFrame(common_words, columns=['Word', 'Frequency'])
+    st.bar_chart(words_df.set_index('Word'))
 
 else:
     st.warning("Please upload both CSV files to proceed.")
