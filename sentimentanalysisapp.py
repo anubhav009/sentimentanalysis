@@ -3,93 +3,106 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 
-st.title("Apple Product Reviews and Twitter Sentiment Analysis")
-
 # File uploaders
 uploaded_file_reviews = st.file_uploader("Upload Apple iPhone Reviews CSV", type="csv")
 uploaded_file_twitter = st.file_uploader("Upload Apple Twitter Sentiment CSV", type="csv")
 
-if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
-    # Load the data
-    reviews_df = pd.read_csv(uploaded_file_reviews)
-    twitter_df = pd.read_csv(uploaded_file_twitter, encoding='ISO-8859-1')
+if uploaded_file_reviews and uploaded_file_twitter:
+    # Load data
+    iphone_reviews = pd.read_csv(uploaded_file_reviews)
+    twitter_sentiment = pd.read_csv(uploaded_file_twitter, encoding='ISO-8859-1')
 
-    # Display the first few rows of each dataframe
-    st.subheader("Apple iPhone Reviews Data")
-    st.dataframe(reviews_df.head())
-    
-    st.subheader("Apple Twitter Sentiment Data")
-    st.dataframe(twitter_df.head())
+    # Data wrangling
+    iphone_reviews['review_rating'] = iphone_reviews['review_rating'].str.extract('(\d+\.\d+)').astype(float)
+    iphone_reviews['reviewed_at'] = pd.to_datetime(iphone_reviews['reviewed_at'])
 
-    # Visualization: Distribution of Review Ratings
-    st.subheader("Distribution of Review Ratings")
-    rating_counts = reviews_df['review_rating'].value_counts().sort_index()
-    st.bar_chart(rating_counts)
-    
-    # Visualization: Review Ratings Pie Chart
-    st.subheader("Review Ratings Pie Chart")
-    fig, ax = plt.subplots()
-    ax.pie(rating_counts, labels=rating_counts.index, autopct='%1.1f%%')
-    st.pyplot(fig)
-    
-    # Visualization: Word Cloud for Reviews
-    st.subheader("Word Cloud for Reviews")
-    # Ensure all reviews are treated as strings and handle missing values
-    reviews_df['review_text'] = reviews_df['review_text'].astype(str).fillna('')
-    review_text = " ".join(reviews_df['review_text'])
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(review_text)
-    fig, ax = plt.subplots()
-    ax.imshow(wordcloud, interpolation='bilinear')
-    ax.axis('off')
-    st.pyplot(fig)
-    
-    # Visualization: Sentiment Analysis
-    st.subheader("Twitter Sentiment Analysis")
-    sentiment_counts = twitter_df['sentiment'].value_counts()
-    st.bar_chart(sentiment_counts)
-    
-    # Visualization: Sentiment Confidence Histogram
-    st.subheader("Sentiment Confidence Histogram")
-    fig, ax = plt.subplots()
-    ax.hist(twitter_df['sentiment:confidence'], bins=20, color='skyblue')
-    st.pyplot(fig)
-    
-    # Dropdown for filtering reviews by country
-    countries = reviews_df['review_country'].unique()
-    selected_country = st.selectbox("Select Country", countries)
-    
-    filtered_reviews_df = reviews_df[reviews_df['review_country'] == selected_country]
-    st.dataframe(filtered_reviews_df)
+    twitter_sentiment = twitter_sentiment[twitter_sentiment['sentiment'] != 'not_relevant']
+    twitter_sentiment['sentiment'] = pd.to_numeric(twitter_sentiment['sentiment'], errors='coerce')
+    valid_twitter_sentiment = twitter_sentiment[twitter_sentiment['sentiment'].isin([1, 2, 3])]
 
-    # Visualization: Reviews over time
-    st.subheader(f"Reviews Over Time in {selected_country}")
-    filtered_reviews_df['reviewed_at'] = pd.to_datetime(filtered_reviews_df['reviewed_at'])
-    reviews_over_time = filtered_reviews_df.set_index('reviewed_at').resample('M').size()
-    st.line_chart(reviews_over_time)
-    
-    # Visualization: Helpful Count vs. Total Comments
-    st.subheader("Helpful Count vs. Total Comments")
-    # Handle non-numeric values and convert to integers
-    reviews_df['helpful_count'] = reviews_df['helpful_count'].str.replace(' people found this helpful', '').str.replace(',', '')
-    reviews_df['helpful_count'] = pd.to_numeric(reviews_df['helpful_count'], errors='coerce').fillna(0).astype(int)
+    sentiment_mapping = {1: 'Positive', 2: 'Neutral', 3: 'Negative'}
+    valid_twitter_sentiment['sentiment_label'] = valid_twitter_sentiment['sentiment'].map(sentiment_mapping)
+    valid_twitter_sentiment['date'] = pd.to_datetime(valid_twitter_sentiment['date'])
+
+    # Streamlit app
+    st.title('Apple iPhone Reviews and Twitter Sentiment Analysis')
+
+    st.header('DataFrames')
+    st.subheader('iPhone Reviews')
+    st.write(iphone_reviews.head())
+
+    st.subheader('Twitter Sentiment')
+    st.write(valid_twitter_sentiment.head())
+
+    st.header('Visualizations')
+
+    # Distribution of Review Ratings
+    st.subheader('Distribution of Review Ratings')
     fig, ax = plt.subplots()
-    ax.scatter(reviews_df['helpful_count'], reviews_df['total_comments'])
-    ax.set_xlabel('Helpful Count')
-    ax.set_ylabel('Total Comments')
+    iphone_reviews['review_rating'].hist(bins=20, edgecolor='black', ax=ax)
+    ax.set_title('Distribution of Review Ratings')
+    ax.set_xlabel('Review Rating')
+    ax.set_ylabel('Frequency')
     st.pyplot(fig)
 
-    # Dropdown for filtering sentiment by query
-    queries = twitter_df['query'].unique()
-    selected_query = st.selectbox("Select Query", queries)
-    
-    filtered_twitter_df = twitter_df[twitter_df['query'] == selected_query]
-    st.dataframe(filtered_twitter_df)
+    # Review Ratings Bar Chart
+    st.subheader('Review Ratings Bar Chart')
+    fig, ax = plt.subplots()
+    iphone_reviews['review_rating'].value_counts().sort_index().plot(kind='bar', color='skyblue', ax=ax)
+    ax.set_title('Review Ratings Bar Chart')
+    ax.set_xlabel('Review Rating')
+    ax.set_ylabel('Frequency')
+    st.pyplot(fig)
 
-    # Visualization: Sentiment over time
-    st.subheader(f"Sentiment Over Time for {selected_query}")
-    filtered_twitter_df['date'] = pd.to_datetime(filtered_twitter_df['date'])
-    sentiment_over_time = filtered_twitter_df.set_index('date').resample('M').size()
-    st.line_chart(sentiment_over_time)
+    # Sentiment Distribution
+    st.subheader('Distribution of Sentiments')
+    fig, ax = plt.subplots()
+    valid_twitter_sentiment['sentiment_label'].value_counts().plot(kind='bar', color='skyblue', ax=ax)
+    ax.set_title('Distribution of Sentiments')
+    ax.set_xlabel('Sentiment')
+    ax.set_ylabel('Frequency')
+    st.pyplot(fig)
 
+    # Reviews Over Time
+    st.subheader('Number of Reviews Over Time')
+    fig, ax = plt.subplots()
+    iphone_reviews.set_index('reviewed_at').resample('M').size().plot(ax=ax)
+    ax.set_title('Number of Reviews Over Time')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Number of Reviews')
+    st.pyplot(fig)
+
+    # Sentiments Over Time
+    st.subheader('Sentiments Over Time')
+    fig, ax = plt.subplots()
+    valid_twitter_sentiment.set_index('date').resample('M')['sentiment_label'].value_counts().unstack().plot(ax=ax)
+    ax.set_title('Sentiments Over Time')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Sentiment Count')
+    st.pyplot(fig)
+
+    # Filter reviews by star ratings
+    st.subheader('Filter Reviews by Star Rating')
+    star_rating = st.selectbox('Select Star Rating', sorted(iphone_reviews['review_rating'].unique()))
+    filtered_reviews = iphone_reviews[iphone_reviews['review_rating'] == star_rating]
+    st.write(filtered_reviews)
+
+    # Generate Word Cloud
+    def generate_wordcloud(sentiment_label=None):
+        if sentiment_label:
+            text = " ".join(review for review in valid_twitter_sentiment[valid_twitter_sentiment['sentiment_label'] == sentiment_label]['text'])
+            if text:
+                wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+                fig, ax = plt.subplots()
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis('off')
+                ax.set_title(f'Word Cloud for {sentiment_label} Sentiment')
+                st.pyplot(fig)
+            else:
+                st.write(f"No text data for {sentiment_label} sentiment.")
+
+    st.subheader('Word Cloud for Reviews')
+    sentiment_type = st.selectbox('Select Sentiment Type', ['Positive', 'Neutral', 'Negative'])
+    generate_wordcloud(sentiment_type)
 else:
-    st.warning("Please upload both CSV files to proceed.")
+    st.write("Please upload both the Apple iPhone Reviews CSV and the Apple Twitter Sentiment CSV.")
