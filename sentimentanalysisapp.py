@@ -94,10 +94,12 @@ if uploaded_file_reviews and uploaded_file_twitter:
     selected_model = st.selectbox('Select Model', model_types)
     
     fig, ax = plt.subplots()
-    ax.plot(model_types, accuracy_scores, marker='o', linestyle='-')
+    colors = ['blue' if model != selected_model else 'red' for model in model_types]
+    ax.plot(model_types, accuracy_scores, marker='o', linestyle='-', color='gray')
+    ax.scatter(model_types, accuracy_scores, color=colors, s=100)
     
     for i, (xi, yi) in enumerate(zip(model_types, accuracy_scores)):
-        ax.annotate(f'({xi}, {yi:.4f})', (xi, yi), textcoords="offset points", xytext=(0, 15), ha='center')
+        ax.annotate(f'({xi}, {yi:.4f})', (xi, yi), textcoords="offset points", xytext=(0, 10), ha='center', fontsize=10)
     
     ax.set_title('Model Accuracy')
     ax.set_xlabel('Model Name')
