@@ -25,7 +25,7 @@ def load_twitter_data(uploaded_file):
     data = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
     data['date'] = pd.to_datetime(data['date'], errors='coerce')
     
-    sentiment_map = {0: 'Negative', 2: 'Neutral', 5: 'Positive'}
+    sentiment_map = {0: 'Negative', 2: 'Neutral', 4: 'Positive'}
     data['sentiment'] = data['sentiment'].map(sentiment_map)
     
     return data
@@ -65,6 +65,7 @@ if amazon_data is not None and twitter_data is not None:
     if not selected_sentiment:
         st.warning("Please select at least one sentiment.")
     else:
+        # Ensure the date range slider values are datetime.date objects
         date_range = st.sidebar.slider(
             'Select Date Range',
             min_value=data['date'].min().date(),
@@ -72,11 +73,15 @@ if amazon_data is not None and twitter_data is not None:
             value=(data['date'].min().date(), data['date'].max().date())
         )
 
+        # Convert date_range to datetime
+        start_date = pd.to_datetime(date_range[0])
+        end_date = pd.to_datetime(date_range[1])
+
         # Filter data based on user input
         filtered_data = data[
             (data['sentiment'].isin(selected_sentiment)) & 
-            (data['date'] >= pd.to_datetime(date_range[0])) & 
-            (data['date'] <= pd.to_datetime(date_range[1]))
+            (data['date'] >= start_date) & 
+            (data['date'] <= end_date)
         ]
 
         # Display filtered data
