@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from wordcloud import WordCloud
 
 st.title("Apple Product Reviews and Twitter Sentiment Analysis")
 
@@ -25,10 +26,31 @@ if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
     rating_counts = reviews_df['review_rating'].value_counts().sort_index()
     st.bar_chart(rating_counts)
     
+    # Visualization: Review Ratings Pie Chart
+    st.subheader("Review Ratings Pie Chart")
+    fig, ax = plt.subplots()
+    ax.pie(rating_counts, labels=rating_counts.index, autopct='%1.1f%%')
+    st.pyplot(fig)
+    
+    # Visualization: Word Cloud for Reviews
+    st.subheader("Word Cloud for Reviews")
+    review_text = " ".join(reviews_df['review_text'])
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(review_text)
+    fig, ax = plt.subplots()
+    ax.imshow(wordcloud, interpolation='bilinear')
+    ax.axis('off')
+    st.pyplot(fig)
+    
     # Visualization: Sentiment Analysis
     st.subheader("Twitter Sentiment Analysis")
     sentiment_counts = twitter_df['sentiment'].value_counts()
     st.bar_chart(sentiment_counts)
+    
+    # Visualization: Sentiment Confidence Histogram
+    st.subheader("Sentiment Confidence Histogram")
+    fig, ax = plt.subplots()
+    ax.hist(twitter_df['sentiment:confidence'], bins=20, color='skyblue')
+    st.pyplot(fig)
     
     # Dropdown for filtering reviews by country
     countries = reviews_df['review_country'].unique()
@@ -42,6 +64,15 @@ if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
     filtered_reviews_df['reviewed_at'] = pd.to_datetime(filtered_reviews_df['reviewed_at'])
     reviews_over_time = filtered_reviews_df.set_index('reviewed_at').resample('M').size()
     st.line_chart(reviews_over_time)
+    
+    # Visualization: Helpful Count vs. Total Comments
+    st.subheader("Helpful Count vs. Total Comments")
+    fig, ax = plt.subplots()
+    ax.scatter(reviews_df['helpful_count'].str.replace(' people found this helpful', '').astype(int), 
+               reviews_df['total_comments'])
+    ax.set_xlabel('Helpful Count')
+    ax.set_ylabel('Total Comments')
+    st.pyplot(fig)
 
     # Dropdown for filtering sentiment by query
     queries = twitter_df['query'].unique()
