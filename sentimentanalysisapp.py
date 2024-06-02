@@ -2,20 +2,32 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Function to load data and ensure necessary columns exist
-def load_data(uploaded_file, expected_columns):
-    try:
-        data = pd.read_csv(uploaded_file, encoding='utf-8')
-    except UnicodeDecodeError:
-        data = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
-    
-    for column in expected_columns:
-        if column not in data.columns:
-            st.warning(f"Uploaded CSV does not contain a '{column}' column.")
-            return None
-    
+# Function to load and preprocess Amazon data
+def load_amazon_data(uploaded_file):
+    data = pd.read_csv(uploaded_file, encoding='utf-8')
+    data.rename(columns={'reviewed_at': 'date'}, inplace=True)
     data['date'] = pd.to_datetime(data['date'], errors='coerce')
-    data = data.dropna(subset=['date'])
+    
+    # Map review ratings to sentiment
+    rating_to_sentiment = {
+        '5.0 out of 5 stars': 'Positive',
+        '4.0 out of 5 stars': 'Positive',
+        '3.0 out of 5 stars': 'Neutral',
+        '2.0 out of 5 stars': 'Negative',
+        '1.0 out of 5 stars': 'Negative'
+    }
+    data['sentiment'] = data['review_rating'].map(rating_to_sentiment)
+    
+    return data
+
+# Function to load and preprocess Twitter data
+def load_twitter_data(uploaded_file):
+    data = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
+    data['date'] = pd.to_datetime(data['date'], errors='coerce')
+    
+    sentiment_map = {0: 'Negative', 2: 'Neutral', 5: 'Positive'}
+    data['sentiment'] = data['sentiment'].map(sentiment_map)
+    
     return data
 
 # Title
@@ -28,15 +40,13 @@ st.sidebar.header("User Input Features")
 uploaded_amazon_file = st.sidebar.file_uploader("Upload Amazon Reviews CSV", type=["csv"])
 uploaded_twitter_file = st.sidebar.file_uploader("Upload Twitter Sentiment CSV", type=["csv"])
 
-expected_columns = ['sentiment', 'date']
-
 # Load data
 amazon_data = twitter_data = None
 if uploaded_amazon_file is not None:
-    amazon_data = load_data(uploaded_amazon_file, expected_columns)
+    amazon_data = load_amazon_data(uploaded_amazon_file)
 
 if uploaded_twitter_file is not None:
-    twitter_data = load_data(uploaded_twitter_file, expected_columns)
+    twitter_data = load_twitter_data(uploaded_twitter_file)
 
 # Dataset selection
 if amazon_data is not None and twitter_data is not None:
