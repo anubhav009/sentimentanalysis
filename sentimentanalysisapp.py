@@ -87,6 +87,15 @@ if uploaded_file_reviews and uploaded_file_twitter:
     filtered_reviews = iphone_reviews[iphone_reviews['review_rating'] == star_rating]
     st.write(filtered_reviews)
 
+    # Plot for filtered reviews by star rating
+    st.subheader(f'Number of Reviews for {star_rating} Star Rating Over Time')
+    fig, ax = plt.subplots()
+    filtered_reviews.set_index('reviewed_at').resample('M').size().plot(ax=ax)
+    ax.set_title(f'Number of Reviews for {star_rating} Star Rating Over Time')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Number of Reviews')
+    st.pyplot(fig)
+
     # Generate Word Cloud
     def generate_wordcloud(sentiment_label=None):
         if sentiment_label:
@@ -102,7 +111,7 @@ if uploaded_file_reviews and uploaded_file_twitter:
                 st.write(f"No text data for {sentiment_label} sentiment.")
 
     st.subheader('Word Cloud for Reviews')
-    sentiment_type = st.selectbox('Select Sentiment Type', ['Positive', 'Neutral', 'Negative'])
+    sentiment_type = st.selectbox('Select Sentiment Type', ['Positive', 'Negative'])
     generate_wordcloud(sentiment_type)
 else:
     st.write("Please upload both the Apple iPhone Reviews CSV and the Apple Twitter Sentiment CSV.")
