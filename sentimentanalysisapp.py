@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
+import numpy as np
 
 st.title("Apple Product Reviews and Twitter Sentiment Analysis")
 
@@ -34,6 +35,8 @@ if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
     
     # Visualization: Word Cloud for Reviews
     st.subheader("Word Cloud for Reviews")
+    # Ensure all reviews are treated as strings and handle missing values
+    reviews_df['review_text'] = reviews_df['review_text'].astype(str).fillna('')
     review_text = " ".join(reviews_df['review_text'])
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(review_text)
     fig, ax = plt.subplots()
@@ -67,9 +70,9 @@ if uploaded_file_reviews is not None and uploaded_file_twitter is not None:
     
     # Visualization: Helpful Count vs. Total Comments
     st.subheader("Helpful Count vs. Total Comments")
+    reviews_df['helpful_count'] = reviews_df['helpful_count'].str.replace(' people found this helpful', '').astype(int)
     fig, ax = plt.subplots()
-    ax.scatter(reviews_df['helpful_count'].str.replace(' people found this helpful', '').astype(int), 
-               reviews_df['total_comments'])
+    ax.scatter(reviews_df['helpful_count'], reviews_df['total_comments'])
     ax.set_xlabel('Helpful Count')
     ax.set_ylabel('Total Comments')
     st.pyplot(fig)
